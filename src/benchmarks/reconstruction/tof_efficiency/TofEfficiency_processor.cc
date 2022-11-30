@@ -39,7 +39,7 @@ void TofEfficiency_processor::InitWithGlobalRootLock(){
     m_th2_btof_phiz->SetDirectory(m_dir_main);
     m_th2_ftof_rphi->SetDirectory(m_dir_main);
     
-    m_tntuple_track = new TNtuple("track","track with tof","det:proj_x:proj_y:proj_z:proj_pathlength:tofhit_x:tofhit_y:tofhit_z:tofhit_t:tofhit_dca");
+    m_tntuple_track = new TNtuple("track","track with tof","det:p:proj_x:proj_y:proj_z:proj_pathlength:tofhit_x:tofhit_y:tofhit_z:tofhit_t:tofhit_dca");
     m_tntuple_track->SetDirectory(m_dir_main);
 }
 
@@ -73,8 +73,14 @@ void TofEfficiency_processor::ProcessSequential(const std::shared_ptr<const JEve
     // Now go through reconstructed tracks points
     logger()->trace("Going over tracks:");
     m_log->trace("   {:>10} {:>10} {:>10} {:>10}", "[x]", "[y]", "[z]", "[length]");
-    for( auto track_segment : trackSegments() ){
+    for( int i_trk = 0; i_trk < trackSegments().size(); i_trk++){
+    	auto track_segment = trackSegments().at(i_trk);
+    	auto reco_track = recoTracks().at(i_trk);
+    	i_trk = i_trk + 1;
         logger()->trace(" Track trajectory");
+        
+	auto p_track = reco_track->getMomentum();
+	auto p_track_mag = sqrt(p_track.x*p_track.x + p_track.y*p_track.y + p_track.z*p_track.z);
 
         for(auto point: track_segment->getPoints()) {
             auto &pos = point.position;
@@ -110,7 +116,7 @@ void TofEfficiency_processor::ProcessSequential(const std::shared_ptr<const JEve
                     }
                 }
             }
-            if(det!=0) m_tntuple_track->Fill(det, pos.x, pos.y, pos.z, point.pathlength, hit_x, hit_y, hit_z, hit_t, distance_closest);
+            if(det!=0) m_tntuple_track->Fill(det, p_track_mag, pos.x, pos.y, pos.z, point.pathlength, hit_x, hit_y, hit_z, hit_t, distance_closest);
         }
     }
 }
