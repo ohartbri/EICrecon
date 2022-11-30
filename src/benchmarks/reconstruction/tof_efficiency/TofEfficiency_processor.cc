@@ -39,7 +39,7 @@ void TofEfficiency_processor::InitWithGlobalRootLock(){
     m_th2_btof_phiz->SetDirectory(m_dir_main);
     m_th2_ftof_rphi->SetDirectory(m_dir_main);
     
-    m_tntuple_track = new TNtuple("track","track with tof","det:p:proj_x:proj_y:proj_z:proj_pathlength:tofhit_x:tofhit_y:tofhit_z:tofhit_t:tofhit_dca");
+    m_tntuple_track = new TNtuple("track","track with tof","det:pdg:p:proj_x:proj_y:proj_z:proj_pathlength:tofhit_x:tofhit_y:tofhit_z:tofhit_t:tofhit_dca");
     m_tntuple_track->SetDirectory(m_dir_main);
 }
 
@@ -47,6 +47,18 @@ void TofEfficiency_processor::InitWithGlobalRootLock(){
 // ProcessSequential
 //-------------------------------------------
 void TofEfficiency_processor::ProcessSequential(const std::shared_ptr<const JEvent>& event) {
+    // go through MC particles to find primary particle. thus only works for particle gun events at the moment:
+    logger()->trace("MC particles:");
+    m_log->trace("   {:>10} {:>10}", "[pdg]", "[status]");
+    int thisPDG = 0;
+    for (auto mc_part: mcParticles()) {
+        m_log->trace("   {:>10} {:>10}", mc_part->getPDG(), mc_part->getGeneratorStatus());
+    	if (mc_part->getGeneratorStatus() == 1){
+    	    thisPDG = mc_part->getPDG();
+    	    break;
+        }
+    }
+
 
     // List TOF Barrel hits from barrel
     logger()->trace("TOF barrel hits:");
@@ -116,7 +128,7 @@ void TofEfficiency_processor::ProcessSequential(const std::shared_ptr<const JEve
                     }
                 }
             }
-            if(det!=0) m_tntuple_track->Fill(det, p_track_mag, pos.x, pos.y, pos.z, point.pathlength, hit_x, hit_y, hit_z, hit_t, distance_closest);
+            if(det!=0) m_tntuple_track->Fill(det, thisPDG, p_track_mag, pos.x, pos.y, pos.z, point.pathlength, hit_x, hit_y, hit_z, hit_t, distance_closest);
         }
     }
 }
